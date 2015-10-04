@@ -1,0 +1,4 @@
+[
+                {"keys": ["ctrl+alt+o"], "command": "prompt_open_folder"},
+                {"keys": ["ctrl+shift+r"], "command": "reindent"}
+]
