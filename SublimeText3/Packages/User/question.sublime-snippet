@@ -1,0 +1,17 @@
+<snippet>
+  <content><![CDATA[
+,
+{
+  "question": [
+    "${1:question_text}"${2:more_question_text}
+  ],
+  "answer": [
+    "${3:answer_text}"${4:more_answer_text}
+  ]
+}${5:question}
+]]></content>
+  <!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+  <tabTrigger>question</tabTrigger>
+  <!-- Optional: Set a scope to limit where the snippet will trigger -->
+  <scope>source.json</scope>
+</snippet>
