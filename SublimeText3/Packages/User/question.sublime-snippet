@@ -8,10 +8,10 @@
   "answer": [
     "${3:answer_text}"${4:more_answer_text}
   ]
-}${5:next_question}
+}${5:question}
 ]]></content>
   <!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
   <tabTrigger>question</tabTrigger>
   <!-- Optional: Set a scope to limit where the snippet will trigger -->
-  <scope>source.JSON</scope>
+  <scope>source.json</scope>
 </snippet>
