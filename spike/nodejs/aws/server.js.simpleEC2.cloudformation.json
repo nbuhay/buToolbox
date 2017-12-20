@@ -61,9 +61,9 @@
           "\n",
           "echo \"Run server.js\"",
           "\n",
-          "git clone https://github.com/nbuhay/toolbox.git",
+          "git clone https://github.com/nbuhay/buToolbox.git",
           "\n",
-          "node toolbox/spike/nodejs/server.js >> toolbox/spike/nodejs/server.log &"]]}
+          "node buToolbox/spike/nodejs/server.js >> buToolbox/spike/nodejs/server.log &"]]}
         }
       }
     }

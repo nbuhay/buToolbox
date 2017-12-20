@@ -9,5 +9,5 @@ export NVM_DIR="$HOME/.nvm"
 nvm install node
 
 # Install and run app
-git clone https://github.com/nbuhay/toolbox.git
-node toolbox/spike/nodejs/server.js >> toolbox/spike/nodejs/server.log &
+git clone https://github.com/nbuhay/buToolbox.git
+node buToolbox/spike/nodejs/server.js >> buToolbox/spike/nodejs/server.log &
