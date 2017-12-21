@@ -1,0 +1,82 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Deploy simple EC2 server.js behind an ELB in Ohio us-east-2a default VPC",
+  "Resources" : {
+    "NodejsDefaultSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Enable TCP access on port 3000",
+        "SecurityGroupIngress" : [
+          {
+            "IpProtocol" : "tcp",
+            "FromPort" : "3000",
+            "ToPort" : "3000",
+            "CidrIp" : "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "ServerjsEC2Instance" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+        "AvailabilityZone" : "us-east-2a",
+        "ImageId" : "ami-82f4dae7",
+        "InstanceType" : "t2.micro",
+        "SecurityGroups" : [
+          { "Ref" : "NodejsDefaultSecurityGroup" }
+        ],
+        "UserData" : {"Fn::Base64" : { "Fn::Join" : ["",[
+          "#!/bin/bash -ex",
+          "\n",
+          "echo \"Install NVM\"",
+          "\n",
+          "curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.1/install.sh | bash",
+          "\n",
+          "echo \"Export NVM dir\"",
+          "\n",
+          "export NVM_DIR=$HOME/.nvm",
+          "\n",
+          "echo \"Do something...\"",
+          "\n",
+          "[ -s $NVM_DIR/nvm.sh ] && \\. $NVM_DIR/nvm.sh",
+          "\n",
+          "echo \"Install Nodejs\"",
+          "\n",
+          "nvm install node",
+          "\n",
+          "echo \"Run server.js\"",
+          "\n",
+          "git clone https://github.com/nbuhay/buToolbox.git",
+          "\n",
+          "node buToolbox/spike/nodejs/server.js >> buToolbox/spike/nodejs/server.log &"]]}
+        }
+      }
+    },
+    "ELB" : {
+      "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties" : {
+        "AvailabilityZones" : [
+          "us-east-2a"
+        ],
+        "Instances" : [
+          { "Ref" : "ServerjsEC2Instance" }
+        ],
+        "Listeners" : [
+          {
+            "InstancePort" : "3000",
+            "InstanceProtocol" : "TCP",
+            "LoadBalancerPort" : "80",
+            "Protocol" : "TCP"
+          }
+        ],
+        "HealthCheck": {
+          "Target": "TCP:3000",
+          "HealthyThreshold": "3",
+          "UnhealthyThreshold": "2",
+          "Interval": "5",
+          "Timeout": "2"
+        }
+      }
+    }
+  }
+}
