@@ -1,0 +1,49 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Deploy app.py in the default VPC on a simple EC2 instance",
+  "Resources" : {
+    "PythonFlaskDefaultSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Enable TCP access on port 8080",
+        "SecurityGroupIngress" : [
+          {
+            "IpProtocol" : "tcp",
+            "FromPort" : "8080",
+            "ToPort" : "8080",
+            "CidrIp" : "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "ApppyEC2Instance" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+        "ImageId" : "ami-82f4dae7",
+        "InstanceType" : "t2.micro",
+        "SecurityGroups" : [
+          { "Ref" : "PythonFlaskDefaultSecurityGroup" }
+        ],
+        "UserData" : {"Fn::Base64" : { "Fn::Join" : ["",[
+          "#!/bin/bash -ex",
+          "\n",
+          "# Update apt-get",
+          "\n",
+          "sudo apt-get update",
+          "\n",
+          "# Install pip",
+          "\n",
+          "sudo apt-get install -y python-pip",
+          "\n",
+          "# Install and run app",
+          "\n",
+          "git clone https://github.com/nbuhay/bu-toolbox.git",
+          "\n",
+          "pip install -r bu-toolbox/spike/python/flask/requirements.txt",
+          "\n",
+          "python bu-toolbox/spike/python/flask/app.py >> bu-toolbox/spike/python/flask/server.log &"]]}
+        }
+      }
+    }
+  }
+}
