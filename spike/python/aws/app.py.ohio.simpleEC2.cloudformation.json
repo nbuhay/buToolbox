@@ -16,7 +16,7 @@
         ]
       }
     },
-    "ApppyEC2Instance" : {
+    "FlaskAppEC2Instance" : {
       "Type" : "AWS::EC2::Instance",
       "Properties" : {
         "ImageId" : "ami-82f4dae7",
@@ -27,21 +27,11 @@
         "UserData" : {"Fn::Base64" : { "Fn::Join" : ["",[
           "#!/bin/bash -ex",
           "\n",
-          "# Update apt-get",
-          "\n",
-          "sudo apt-get update",
-          "\n",
-          "# Install pip",
-          "\n",
-          "sudo apt-get install -y python-pip",
-          "\n",
-          "# Install and run app",
-          "\n",
           "git clone https://github.com/nbuhay/bu-toolbox.git",
           "\n",
-          "pip install -r bu-toolbox/spike/python/flask/requirements.txt",
+          "chmod u+x /bu-toolbox/spike/python/aws/ec2.userData.cloudformation.sh",
           "\n",
-          "python bu-toolbox/spike/python/flask/app.py >> bu-toolbox/spike/python/flask/server.log &"]]}
+          "/bu-toolbox/spike/python/aws/ec2.userData.cloudformation.sh"]]}
         }
       }
     }
