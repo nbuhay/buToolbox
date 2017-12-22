@@ -1,0 +1,41 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Deploy app.py in the default VPC on a simple EC2 instance",
+  "Resources" : {
+    "PythonFlaskDefaultSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Enable TCP access on port 8080",
+        "VpcId" : { "Fn::ImportValue" : "VPCID" },
+        "SecurityGroupIngress" : [
+          {
+            "IpProtocol" : "tcp",
+            "FromPort" : "8080",
+            "ToPort" : "8080",
+            "CidrIp" : "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "FlaskAppEC2Instance" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+        "ImageId" : "ami-82f4dae7",
+        "InstanceType" : "t2.micro",
+        "SubnetId" : { "Fn::ImportValue" : "PublicSubnetID" },
+        "SecurityGroupIds" : [
+          { "Ref" : "PythonFlaskDefaultSecurityGroup" }
+        ],
+        "UserData" : {"Fn::Base64" : { "Fn::Join" : ["",[
+          "#!/bin/bash -ex",
+          "\n",
+          "git clone https://github.com/nbuhay/bu-toolbox.git",
+          "\n",
+          "chmod u+x /bu-toolbox/spike/python/aws/ec2.userData.cloudformation.sh",
+          "\n",
+          "/bu-toolbox/spike/python/aws/ec2.userData.cloudformation.sh"]]}
+        }
+      }
+    }
+  }
+}
