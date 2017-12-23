@@ -12,6 +12,10 @@ Parameters:
       - t2.micro
       - t2.small
     Description: "t2.nano, t2.micro, or t2.small"
+  AppImageId:
+    Type: String
+    Default: ami-82f4dae7
+    Description: "Use region's default Ubuntu AMI.  Defaults to Ohio region ami-82f4dae7."
 Resources:
   DefaultPythonSG:
     Type: AWS::EC2::SecurityGroup
@@ -42,7 +46,8 @@ Resources:
   FlaskAppLaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
-      ImageId : ami-82f4dae7
+      ImageId :
+        Ref: AppImageId
       InstanceType: 
         Ref: AppEC2InstanceType
       SecurityGroups:
