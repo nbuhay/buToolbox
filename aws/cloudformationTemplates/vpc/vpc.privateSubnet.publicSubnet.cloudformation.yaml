@@ -4,18 +4,24 @@ Parameters:
   VPCCIDR:
     Type: String
     Default: 10.0.0.0/16
-  PrivateSubnet1CIDR:
+  PrivSub1CIDR:
     Type: String
     Default: 10.0.0.0/24
-  PublicSubnet1CIDR:
+  PubSub1CIDR:
     Type: String
     Default: 10.0.1.0/24
-  PrivateSubnet2CIDR:
+  PrivSub2CIDR:
     Type: String
     Default: 10.0.2.0/24
-  PublicSubnet2CIDR:
+  PubSub2CIDR:
     Type: String
     Default: 10.0.3.0/24
+  PrivSub3CIDR:
+    Type: String
+    Default: 10.0.4.0/24
+  PubSub3CIDR:
+    Type: String
+    Default: 10.0.5.0/24
 Resources:
   VPC:
     Type: AWS::EC2::VPC
@@ -25,7 +31,7 @@ Resources:
       EnableDnsSupport: true
       EnableDnsHostnames: true
       InstanceTenancy: default
-  PrivateSubnet1:
+  PrivSub1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId:
@@ -35,8 +41,8 @@ Resources:
         - Fn::GetAZs: !Ref AWS::Region
       MapPublicIpOnLaunch: false
       CidrBlock:
-        Ref: PrivateSubnet1CIDR
-  PublicSubnet1:
+        Ref: PrivSub1CIDR
+  PubSub1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId:
@@ -46,8 +52,8 @@ Resources:
         - Fn::GetAZs: !Ref AWS::Region
       MapPublicIpOnLaunch: true
       CidrBlock:
-        Ref: PublicSubnet1CIDR
-  PrivateSubnet2:
+        Ref: PubSub1CIDR
+  PrivSub2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId:
@@ -57,8 +63,8 @@ Resources:
         - Fn::GetAZs: !Ref AWS::Region
       MapPublicIpOnLaunch: false
       CidrBlock:
-        Ref: PrivateSubnet2CIDR
-  PublicSubnet2:
+        Ref: PrivSub2CIDR
+  PubSub2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId:
@@ -68,7 +74,29 @@ Resources:
         - Fn::GetAZs: !Ref AWS::Region
       MapPublicIpOnLaunch: true
       CidrBlock:
-        Ref: PublicSubnet2CIDR
+        Ref: PubSub2CIDR
+  PrivSub3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone: !Select
+        - 2
+        - Fn::GetAZs: !Ref AWS::Region
+      MapPublicIpOnLaunch: false
+      CidrBlock:
+        Ref: PrivSub3CIDR
+  PubSub3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone: !Select
+        - 2
+        - Fn::GetAZs: !Ref AWS::Region
+      MapPublicIpOnLaunch: true
+      CidrBlock:
+        Ref: PubSub3CIDR
 Outputs:
   VPCID:
     Description: "ID of VPC created by this template."
@@ -76,27 +104,39 @@ Outputs:
       Ref: VPC
     Export:
       Name: VPCID
-  PrivateSubnet1ID:
+  PrivSub1ID:
     Description: "ID of private subnet 1 residing in this template's VPC."
     Value:
-      Ref: PrivateSubnet1
+      Ref: PrivSub1
     Export:
-      Name: PrivateSubnet1ID
-  PublicSubnet1ID:
+      Name: PrivSub1ID
+  PubSub1ID:
     Description: "ID of public subnet 1 residing in this template's VPC."
     Value:
-      Ref: PublicSubnet1
+      Ref: PubSub1
     Export:
-      Name: PublicSubnet1ID
-  PrivateSubnet2ID:
+      Name: PubSub1ID
+  PrivSub2ID:
     Description: "ID of private subnet 2 residing in this template's VPC."
     Value:
-      Ref: PrivateSubnet2
+      Ref: PrivSub2
     Export:
-      Name: PrivateSubnet2ID
-  PublicSubnet2ID:
+      Name: PrivSub2ID
+  PubSub2ID:
     Description: "ID of public subnet 2 residing in this template's VPC."
     Value:
-      Ref: PublicSubnet2
+      Ref: PubSub2
     Export:
-      Name: PublicSubnet2ID
+      Name: PubSub2ID
+  PrivSub3ID:
+    Description: "ID of private subnet 3 residing in this template's VPC."
+    Value:
+      Ref: PrivSub3
+    Export:
+      Name: PrivSub3ID
+  PubSub3ID:
+    Description: "ID of public subnet 3 residing in this template's VPC."
+    Value:
+      Ref: PubSub3
+    Export:
+      Name: PubSub3ID
