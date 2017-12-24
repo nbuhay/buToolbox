@@ -23,6 +23,7 @@ Parameters:
     Type: String
     Default: 10.0.5.0/24
 Resources:
+  # Add the VPC with DNS enabled
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -31,6 +32,10 @@ Resources:
       EnableDnsSupport: true
       EnableDnsHostnames: true
       InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: Test-Cloudformation-VPC
+  # Create 1 public and 1 private subnet per AZ
   PrivSub1:
     Type: AWS::EC2::Subnet
     Properties:
@@ -42,6 +47,9 @@ Resources:
       MapPublicIpOnLaunch: false
       CidrBlock:
         Ref: PrivSub1CIDR
+      Tags:
+        - Key: Name
+          Value: PrivSub1
   PubSub1:
     Type: AWS::EC2::Subnet
     Properties:
@@ -53,6 +61,9 @@ Resources:
       MapPublicIpOnLaunch: true
       CidrBlock:
         Ref: PubSub1CIDR
+      Tags:
+        - Key: Name
+          Value: PubSub1
   PrivSub2:
     Type: AWS::EC2::Subnet
     Properties:
@@ -64,6 +75,9 @@ Resources:
       MapPublicIpOnLaunch: false
       CidrBlock:
         Ref: PrivSub2CIDR
+      Tags:
+        - Key: Name
+          Value: PrivSub2
   PubSub2:
     Type: AWS::EC2::Subnet
     Properties:
@@ -75,6 +89,9 @@ Resources:
       MapPublicIpOnLaunch: true
       CidrBlock:
         Ref: PubSub2CIDR
+      Tags:
+        - Key: Name
+          Value: PubSub2
   PrivSub3:
     Type: AWS::EC2::Subnet
     Properties:
@@ -86,6 +103,9 @@ Resources:
       MapPublicIpOnLaunch: false
       CidrBlock:
         Ref: PrivSub3CIDR
+      Tags:
+        - Key: Name
+          Value: PrivSub3
   PubSub3:
     Type: AWS::EC2::Subnet
     Properties:
@@ -97,6 +117,94 @@ Resources:
       MapPublicIpOnLaunch: true
       CidrBlock:
         Ref: PubSub3CIDR
+      Tags:
+        - Key: Name
+          Value: PubSub3
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: Test-Cloudformation-InternetGateway
+  AttachInternetGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: VPC
+      InternetGatewayId:
+        Ref: InternetGateway
+  # Add a routing table that can be referenced by this template (cannot with default route table)
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+  # Add Internet facing route
+  InternetGatewayRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: InternetGateway
+      RouteTableId:
+        Ref: RouteTable
+    DependsOn: AttachInternetGateway
+  # Associate all public subnets to the Internet Gateway route table
+  PubSub1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: RouteTable
+      SubnetId:
+        Ref: PubSub1
+    DependsOn: RouteTable
+  PubSub2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: RouteTable
+      SubnetId:
+        Ref: PubSub2
+    DependsOn: RouteTable
+  PubSub3RouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        RouteTableId:
+          Ref: RouteTable
+        SubnetId:
+          Ref: PubSub3
+      DependsOn: RouteTable
+  # Add Network ACL for public subnets
+  PublicNetworkACL:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId:
+        Ref: VPC
+  # Associate all public subnets to Public Network ACL
+  PubSub1NetworkACLAssociation:
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    DependsOn: PublicNetworkACL
+    Properties:
+      SubnetId:
+        Ref: PubSub1
+      NetworkAclId:
+        Ref: PublicNetworkACL
+  PubSub2NetworkACLAssociation:
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    DependsOn: PublicNetworkACL
+    Properties:
+      SubnetId:
+        Ref: PubSub2
+      NetworkAclId:
+        Ref: PublicNetworkACL 
+  PubSub3NetworkACLAssociation:
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    DependsOn: PublicNetworkACL
+    Properties:
+      SubnetId:
+        Ref: PubSub3
+      NetworkAclId:
+        Ref: PublicNetworkACL 
 Outputs:
   VPCID:
     Description: "ID of VPC created by this template."
