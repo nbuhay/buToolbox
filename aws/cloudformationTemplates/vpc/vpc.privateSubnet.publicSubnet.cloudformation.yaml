@@ -133,8 +133,8 @@ Resources:
         Ref: VPC
       InternetGatewayId:
         Ref: InternetGateway
-  # Add a routing table that can be referenced by this template (cannot with default route table)
-  RouteTable:
+  # Add routing table for public subnets that will route all traffic to the internet gateway 
+  PubRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId:
@@ -147,33 +147,33 @@ Resources:
       GatewayId:
         Ref: InternetGateway
       RouteTableId:
-        Ref: RouteTable
+        Ref: PubRouteTable
     DependsOn: AttachInternetGateway
   # Associate all public subnets to the Internet Gateway route table
   PubSub1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId:
-        Ref: RouteTable
+        Ref: PubRouteTable
       SubnetId:
         Ref: PubSub1
-    DependsOn: RouteTable
+    DependsOn: PubRouteTable
   PubSub2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId:
-        Ref: RouteTable
+        Ref: PubRouteTable
       SubnetId:
         Ref: PubSub2
-    DependsOn: RouteTable
+    DependsOn: PubRouteTable
   PubSub3RouteTableAssociation:
       Type: AWS::EC2::SubnetRouteTableAssociation
       Properties:
         RouteTableId:
-          Ref: RouteTable
+          Ref: PubRouteTable
         SubnetId:
           Ref: PubSub3
-      DependsOn: RouteTable
+      DependsOn: PubRouteTable
   # Add Network ACL for public subnets
   PublicNetworkACL:
     Type: AWS::EC2::NetworkAcl
@@ -204,7 +204,40 @@ Resources:
       SubnetId:
         Ref: PubSub3
       NetworkAclId:
-        Ref: PublicNetworkACL 
+        Ref: PublicNetworkACL
+  # Add routing table that will route all traffic to NAT instances
+  PrivRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+  # Add Network Address Translation (NAT) Gateway for private subnets
+  EIP1:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  NatGateway1:
+    DependsOn: AttachInternetGateway
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - EIP1
+        - AllocationId
+      SubnetId:
+        Ref: PubSub1
+      Tags:
+        - Key: Name
+          Value: PubSub1-EIP
+  Nat1Route:
+    Type: AWS::EC2::Route
+    DependsOn: PrivRouteTable
+    Properties:
+      RouteTableId:
+        Ref: PrivRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NatGateway1
 Outputs:
   VPCID:
     Description: "ID of VPC created by this template."
