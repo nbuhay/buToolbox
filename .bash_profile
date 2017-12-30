@@ -24,3 +24,12 @@ alias vupp='vagrant up --provision'
 alias vssh='vagrant ssh'
 alias vh='vagrant halt'
 alias vs='vagrant status'
+
+### Docker ###
+alias dps='docker ps'
+alias di='docker images'
+alias db='docker build'
+alias dr='docker run'
+alias de='docker exec -it'
+alias drmps='docker rm $(docker ps -aq)'
+alias drmis='docker rmi $(docker images -aq)'
