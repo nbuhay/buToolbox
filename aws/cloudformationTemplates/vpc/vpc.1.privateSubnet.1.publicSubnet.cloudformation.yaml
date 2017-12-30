@@ -1,0 +1,449 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Generic VPC creation with 1 public and 1 private subnet.
+  NOTE:
+    Charged per allocation of a NAT Gateway as 1 full hour per build.
+    NAT Gateway instance is commented out.
+Parameters:
+  VPCCIDR:
+    Type: String
+    Default: 10.0.0.0/16
+  PrivSub1CIDR:
+    Type: String
+    Default: 10.0.0.0/24
+  PubSub1CIDR:
+    Type: String
+    Default: 10.0.1.0/24
+  HomeNetworkCIDR:
+    Type: String
+    Default: 0.0.0.0/0
+    Description: >
+      CIDR Block of home network.
+      Restricts SSH to VMs in public subnet from defined CIRD block.
+  UseNatGateway:
+    Type: String
+    Default: false
+    AllowedValues:
+      - true
+      - false
+    Description: >
+      Use of AWS NAT Gateway for this build.
+      NOTE:
+        You will be charged for using a NAT Gateway.
+      Allowed Values:
+        true/false
+Conditions:
+  BuildNatGateway: !Equals [ !Ref UseNatGateway, true]
+Resources:
+  # Add the VPC with DNS enabled
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock:
+        Ref: VPCCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: Test-Cloudformation-VPC
+  # Create 1 public and 1 private subnet
+  PrivSub1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref AWS::Region
+      MapPublicIpOnLaunch: false
+      CidrBlock:
+        Ref: PrivSub1CIDR
+      Tags:
+        - Key: Name
+          Value: PrivSub1
+  PubSub1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref AWS::Region
+      MapPublicIpOnLaunch: true
+      CidrBlock:
+        Ref: PubSub1CIDR
+      Tags:
+        - Key: Name
+          Value: PubSub1
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: Test-Cloudformation-InternetGateway
+  AttachInternetGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: VPC
+      InternetGatewayId:
+        Ref: InternetGateway
+  # Add routing table for public subnet that will route all traffic to the internet gateway
+  PubRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: PubRouteTable
+  # Add Internet facing route
+  InternetGatewayRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachInternetGateway
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: InternetGateway
+      RouteTableId:
+        Ref: PubRouteTable
+  # Associate public subnet to the InternetGatewayRoute in the PubRouteTable
+  PubSub1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn: PubRouteTable
+    Properties:
+      RouteTableId:
+        Ref: PubRouteTable
+      SubnetId:
+        Ref: PubSub1
+  # Add routing table for priv subnet that will route traffic to NAT Gateway
+  PrivRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: PrivRouteTable1
+  # Add a Network Address Translation (NAT) Gateway for the private subnet
+  EIP1:
+    Type: AWS::EC2::EIP
+    Condition: BuildNatGateway
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: Nat-PubSub1-EIP
+  NatGateway1:
+    Type: AWS::EC2::NatGateway
+    Condition: BuildNatGateway
+    DependsOn: [AttachInternetGateway, EIP1]
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - EIP1
+        - AllocationId
+      SubnetId:
+        Ref: PubSub1
+      Tags:
+        - Key: Name
+          Value: Nat-PubSub1
+  Nat1Route:
+    Type: AWS::EC2::Route
+    Condition: BuildNatGateway
+    DependsOn: NatGateway1
+    Properties:
+      RouteTableId:
+        Ref: PrivRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NatGateway1
+  # Setup Network Access Control Lists in accordance to AWS recommendations
+  # https://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Appendix_NACLs.html#VPC_Appendix_NACLs_Scenario_2
+  # Add Network ACL for the public and private subnet
+  PubSub1NetworkACL:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: PubSub1-NACL
+  PrivSub1NetworkACL:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: PrivSub1-NACL
+  # Associate public subnet to PubSub1NetworkACL and private subnet to PrivSub1NetworkACL
+  PubSub1NetworkACLAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    DependsOn: PubSub1NetworkACL
+    Properties:
+      SubnetId:
+        Ref: PubSub1
+      NetworkAclId:
+        Ref: PubSub1NetworkACL
+  PrivSub1NetworkACLAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    DependsOn: PrivSub1NetworkACL
+    Properties:
+      SubnetId:
+        Ref: PrivSub1
+      NetworkAclId:
+        Ref: PrivSub1NetworkACL
+  # Set ingress (inbound) rules for PubSub1NetworkACL
+  PubSub1NetworkACLIngressEntryHTTP:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: false
+      NetworkAclId:
+        Ref: PubSub1NetworkACL
+      PortRange:
+        From: 80
+        To: 80
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 100
+  PubSub1NetworkACLIngressEntryHTTPS:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: false
+      NetworkAclId:
+        Ref: PubSub1NetworkACL
+      PortRange:
+        From: 443
+        To: 443
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 110
+  PubSub1NetworkACLIngressEntryHomeNetworkSSH:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock:
+        Ref: HomeNetworkCIDR
+      Egress: false
+      NetworkAclId:
+        Ref: PubSub1NetworkACL
+      PortRange:
+        From: 22
+        To: 22
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 120
+  PubSub1NetworkACLIngressEntryHomeNetworkRDP:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock:
+        Ref: HomeNetworkCIDR
+      Egress: false
+      NetworkAclId:
+        Ref: PubSub1NetworkACL
+      PortRange:
+        From: 3389
+        To: 3389
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 130
+  PubSub1NetworkACLIngressEntryReturnTrafficToHosts:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: false
+      NetworkAclId:
+        Ref: PubSub1NetworkACL
+      PortRange:
+        From: 1024
+        To: 65535
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 140
+  # Set egress (outbound) rules for PubSub1NetworkACL
+  PubSub1NetworkACLEgressEntryHTTP:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId:
+        Ref: PubSub1NetworkACL
+      PortRange:
+        From: 80
+        To: 80
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 100
+  PubSub1NetworkACLEgressEntryHTTPS:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId:
+        Ref: PubSub1NetworkACL
+      PortRange:
+        From: 443
+        To: 443
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 110
+  PubSub1NetworkACLEgressEntryMYSQLPrivSub1:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock:
+        Ref: PrivSub1CIDR
+      Egress: true
+      NetworkAclId:
+        Ref: PubSub1NetworkACL
+      PortRange:
+        From: 3306
+        To: 3306
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 120
+  PubSub1NetworkACLEgressEntryReturnTrafficToHosts:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId:
+        Ref: PubSub1NetworkACL
+      PortRange:
+        From: 49152
+        To: 65535
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 140
+  PubSub1NetworkACLEgressEntrySSH:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock:
+        Ref: PrivSub1CIDR
+      Egress: true
+      NetworkAclId:
+        Ref: PubSub1NetworkACL
+      PortRange:
+        From: 22
+        To: 22
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 150
+  # Set ingress (inbound) rules for PrivSub1NetworkACL
+  PrivSub1NetowrkACLIngressEntryMYSQLPubSub1:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock:
+        Ref: PubSub1CIDR
+      Egress: false
+      NetworkAclId:
+        Ref: PrivSub1NetworkACL
+      PortRange:
+        From: 3306
+        To: 3306
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 100
+  PrivSub1NetowrkACLIngressEntrySSH:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock:
+        Ref: PubSub1CIDR
+      Egress: false
+      NetworkAclId:
+        Ref: PrivSub1NetworkACL
+      PortRange:
+        From: 22
+        To: 22
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 120
+  PrivSub1NetowrkACLIngressEntryRDP:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock:
+        Ref: PubSub1CIDR
+      Egress: false
+      NetworkAclId:
+        Ref: PrivSub1NetworkACL
+      PortRange:
+        From: 3389
+        To: 3389
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 130
+  PrivSub1NetowrkACLIngressEntryReturnTrafficToHosts:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: false
+      NetworkAclId:
+        Ref: PrivSub1NetworkACL
+      PortRange:
+        From: 1024
+        To: 65535
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 140
+  # Set egress (outbound) rules for PrivSub1NetworkACL
+  PrivSub1NetworkACLEgressEntryHTTP:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId:
+        Ref: PrivSub1NetworkACL
+      PortRange:
+        From: 80
+        To: 80
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 100
+  PrivSub1NetworkACLEgressEntryHTTPS:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId:
+        Ref: PrivSub1NetworkACL
+      PortRange:
+        From: 443
+        To: 443
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 110
+  PrivSub1NetworkACLEgressEntryReturnTrafficToHosts:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock:
+        Ref: PubSub1CIDR
+      Egress: true
+      NetworkAclId:
+        Ref: PrivSub1NetworkACL
+      PortRange:
+        From: 1024
+        To: 65535
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 120
+Outputs:
+  VPCID:
+    Description: "ID of VPC created by this template."
+    Value:
+      Ref: VPC
+    Export:
+      Name: VPCID
+  PrivSub1ID:
+    Description: "ID of private subnet 1 residing in this template's VPC."
+    Value:
+      Ref: PrivSub1
+    Export:
+      Name: PrivSub1ID
+  PubSub1ID:
+    Description: "ID of public subnet 1 residing in this template's VPC."
+    Value:
+      Ref: PubSub1
+    Export:
+      Name: PubSub1ID
