@@ -1,8 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: "Sample EC2 autoscaling group."
-Metadata:
-  Application:
-      Description: "EFS deployment across all AZs."
+Description: "EFS deployment across all AZs in a given region."
 Resources:
   DefaultSG:
     Type: AWS::EC2::SecurityGroup
