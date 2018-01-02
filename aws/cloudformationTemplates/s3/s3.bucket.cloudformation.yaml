@@ -1,0 +1,17 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Creates a generic S3 bucket.
+  Deploys bucket in region where the template is uploaded.
+Parameters:
+  BucketName:
+    Type: String
+    Default: very-unique-and-different-bucket-name-for-testing
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Ref: BucketName
+      Tags:
+        - Key: Name
+          Value: TestBucket
