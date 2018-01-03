@@ -1,0 +1,155 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Use with efs.autoscalingGroup.cloudformation.yaml.
+  Generic VPC creation with 3 public subnet.
+Parameters:
+  VPCCIDR:
+    Type: String
+    Default: 10.0.0.0/16
+  PubSub1CIDR:
+    Type: String
+    Default: 10.0.1.0/24
+  PubSub2CIDR:
+    Type: String
+    Default: 10.0.3.0/24
+  PubSub3CIDR:
+    Type: String
+    Default: 10.0.5.0/24
+Resources:
+  # Add the VPC with DNS enabled
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock:
+        Ref: VPCCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: Test-Cloudformation-VPC
+  # Create 1 public subnet
+  PubSub1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref AWS::Region
+      MapPublicIpOnLaunch: true
+      CidrBlock:
+        Ref: PubSub1CIDR
+      Tags:
+        - Key: Name
+          Value: PubSub1
+  PubSub2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone: !Select
+        - 1
+        - Fn::GetAZs: !Ref AWS::Region
+      MapPublicIpOnLaunch: true
+      CidrBlock:
+        Ref: PubSub2CIDR
+      Tags:
+        - Key: Name
+          Value: PubSub2
+  PubSub3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone: !Select
+        - 2
+        - Fn::GetAZs: !Ref AWS::Region
+      MapPublicIpOnLaunch: true
+      CidrBlock:
+        Ref: PubSub3CIDR
+      Tags:
+        - Key: Name
+          Value: PubSub3
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: Test-Cloudformation-InternetGateway
+  AttachInternetGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: VPC
+      InternetGatewayId:
+        Ref: InternetGateway
+  # Add routing table for public subnet that will route all traffic to the internet gateway
+  PubRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: PubRouteTable
+  # Add Internet facing route
+  InternetGatewayRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachInternetGateway
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: InternetGateway
+      RouteTableId:
+        Ref: PubRouteTable
+  # Associate public subnet to the InternetGatewayRoute in the PubRouteTable
+  PubSub1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PubRouteTable
+      SubnetId:
+        Ref: PubSub1
+    DependsOn: PubRouteTable
+  PubSub2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PubRouteTable
+      SubnetId:
+        Ref: PubSub2
+    DependsOn: PubRouteTable
+  PubSub3RouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        RouteTableId:
+          Ref: PubRouteTable
+        SubnetId:
+          Ref: PubSub3
+      DependsOn: PubRouteTable
+Outputs:
+  VPCID:
+    Description: "ID of VPC created by this template."
+    Value:
+      Ref: VPC
+    Export:
+      Name: VPCID
+  PubSub1ID:
+    Description: "ID of public subnet 1 residing in this template's VPC."
+    Value:
+      Ref: PubSub1
+    Export:
+      Name: PubSub1ID
+  PubSub2ID:
+    Description: "ID of public subnet 2 residing in this template's VPC."
+    Value:
+      Ref: PubSub2
+    Export:
+      Name: PubSub2ID
+  PubSub3ID:
+    Description: "ID of public subnet 3 residing in this template's VPC."
+    Value:
+      Ref: PubSub3
+    Export:
+      Name: PubSub3ID

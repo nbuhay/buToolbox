@@ -1,0 +1,71 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Deploy server.js in the default VPC on a simple EC2 instance",
+  "Resources" : {
+    "NodejsDefaultSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Enable TCP access on port 3000",
+        "SecurityGroupIngress" : [
+          {
+            "IpProtocol" : "tcp",
+            "FromPort" : "3000",
+            "ToPort" : "3000",
+            "CidrIp" : "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "SSHSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Enable access via SSH on port 22",
+        "SecurityGroupIngress" : [
+          {
+            "IpProtocol" : "tcp",
+            "FromPort" : "22",
+            "ToPort" : "22",
+            "CidrIp" : "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "ServerjsEC2Instance" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+        "KeyName": "KEY_NAME_PLACEHOLDER",
+        "ImageId" : "ami-82f4dae7",
+        "InstanceType" : "t2.micro",
+        "SecurityGroups" : [
+          { "Ref" : "NodejsDefaultSecurityGroup" },
+          { "Ref" : "SSHSecurityGroup" }
+        ],
+        "UserData" : {"Fn::Base64" : { "Fn::Join" : ["",[
+          "#!/bin/bash -ex",
+          "\n",
+          "echo \"Install NVM\"",
+          "\n",
+          "curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.1/install.sh | bash",
+          "\n",
+          "echo \"Export NVM dir\"",
+          "\n",
+          "export NVM_DIR=$HOME/.nvm",
+          "\n",
+          "echo \"Do something...\"",
+          "\n",
+          "[ -s $NVM_DIR/nvm.sh ] && \\. $NVM_DIR/nvm.sh",
+          "\n",
+          "echo \"Install Nodejs\"",
+          "\n",
+          "nvm install node",
+          "\n",
+          "echo \"Run server.js\"",
+          "\n",
+          "git clone https://github.com/nbuhay/bu-toolbox.git",
+          "\n",
+          "node bu-toolbox/spike/nodejs/server.js >> bu-toolbox/spike/nodejs/server.log &"]]}
+        }
+      }
+    }
+  }
+}

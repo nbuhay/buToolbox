@@ -1,0 +1,363 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: "Generic VPC creation with public and private subnets."
+Parameters:
+  VPCCIDR:
+    Type: String
+    Default: 10.0.0.0/16
+  PrivSub1CIDR:
+    Type: String
+    Default: 10.0.0.0/24
+  PubSub1CIDR:
+    Type: String
+    Default: 10.0.1.0/24
+  PrivSub2CIDR:
+    Type: String
+    Default: 10.0.2.0/24
+  PubSub2CIDR:
+    Type: String
+    Default: 10.0.3.0/24
+  PrivSub3CIDR:
+    Type: String
+    Default: 10.0.4.0/24
+  PubSub3CIDR:
+    Type: String
+    Default: 10.0.5.0/24
+Resources:
+  # Add the VPC with DNS enabled
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock:
+        Ref: VPCCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: Test-Cloudformation-VPC
+  # Create 1 public and 1 private subnet per AZ
+  PrivSub1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref AWS::Region
+      MapPublicIpOnLaunch: false
+      CidrBlock:
+        Ref: PrivSub1CIDR
+      Tags:
+        - Key: Name
+          Value: PrivSub1
+  PubSub1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref AWS::Region
+      MapPublicIpOnLaunch: true
+      CidrBlock:
+        Ref: PubSub1CIDR
+      Tags:
+        - Key: Name
+          Value: PubSub1
+  PrivSub2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone: !Select
+        - 1
+        - Fn::GetAZs: !Ref AWS::Region
+      MapPublicIpOnLaunch: false
+      CidrBlock:
+        Ref: PrivSub2CIDR
+      Tags:
+        - Key: Name
+          Value: PrivSub2
+  PubSub2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone: !Select
+        - 1
+        - Fn::GetAZs: !Ref AWS::Region
+      MapPublicIpOnLaunch: true
+      CidrBlock:
+        Ref: PubSub2CIDR
+      Tags:
+        - Key: Name
+          Value: PubSub2
+  PrivSub3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone: !Select
+        - 2
+        - Fn::GetAZs: !Ref AWS::Region
+      MapPublicIpOnLaunch: false
+      CidrBlock:
+        Ref: PrivSub3CIDR
+      Tags:
+        - Key: Name
+          Value: PrivSub3
+  PubSub3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone: !Select
+        - 2
+        - Fn::GetAZs: !Ref AWS::Region
+      MapPublicIpOnLaunch: true
+      CidrBlock:
+        Ref: PubSub3CIDR
+      Tags:
+        - Key: Name
+          Value: PubSub3
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: Test-Cloudformation-InternetGateway
+  AttachInternetGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: VPC
+      InternetGatewayId:
+        Ref: InternetGateway
+  # Add routing table for public subnets that will route all traffic to the internet gateway
+  PubRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: PubRouteTable
+  # Add Internet facing route
+  InternetGatewayRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: InternetGateway
+      RouteTableId:
+        Ref: PubRouteTable
+    DependsOn: AttachInternetGateway
+  # Associate all public subnets to the Internet Gateway route table
+  PubSub1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PubRouteTable
+      SubnetId:
+        Ref: PubSub1
+    DependsOn: PubRouteTable
+  PubSub2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PubRouteTable
+      SubnetId:
+        Ref: PubSub2
+    DependsOn: PubRouteTable
+  PubSub3RouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        RouteTableId:
+          Ref: PubRouteTable
+        SubnetId:
+          Ref: PubSub3
+      DependsOn: PubRouteTable
+  # Add Network ACL for public subnets
+  PublicNetworkACL:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId:
+        Ref: VPC
+  # Associate all public subnets to Public Network ACL
+  PubSub1NetworkACLAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    DependsOn: PublicNetworkACL
+    Properties:
+      SubnetId:
+        Ref: PubSub1
+      NetworkAclId:
+        Ref: PublicNetworkACL
+  PubSub2NetworkACLAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    DependsOn: PublicNetworkACL
+    Properties:
+      SubnetId:
+        Ref: PubSub2
+      NetworkAclId:
+        Ref: PublicNetworkACL
+  PubSub3NetworkACLAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    DependsOn: PublicNetworkACL
+    Properties:
+      SubnetId:
+        Ref: PubSub3
+      NetworkAclId:
+        Ref: PublicNetworkACL
+  # Add routing table per priv subnet that will route traffic to NAT instance within the subnet
+  PrivRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: PrivRouteTable1
+  PrivRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: PrivRouteTable2
+  PrivRouteTable3:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: PrivRouteTable3
+  # Add a Network Address Translation (NAT) Gateway per private subnets
+  EIP1:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: Nat-PubSub1-EIP
+  NatGateway1:
+    DependsOn: [AttachInternetGateway, EIP1]
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - EIP1
+        - AllocationId
+      SubnetId:
+        Ref: PubSub1
+      Tags:
+        - Key: Name
+          Value: Nat-PubSub1
+  Nat1Route:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: PrivRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NatGateway1
+  EIP2:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: Nat-PubSub2-EIP
+  NatGateway2:
+    DependsOn: [AttachInternetGateway, EIP2]
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - EIP2
+        - AllocationId
+      SubnetId:
+        Ref: PubSub2
+      Tags:
+        - Key: Name
+          Value: Nat-PubSub2
+  Nat2Route:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: PrivRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NatGateway2
+  EIP3:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: Nat-PubSub3-EIP
+  NatGateway3:
+    DependsOn: [AttachInternetGateway, EIP3]
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - EIP3
+        - AllocationId
+      SubnetId:
+        Ref: PubSub3
+      Tags:
+        - Key: Name
+          Value: Nat-PubSub3
+  Nat3Route:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: PrivRouteTable3
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NatGateway3
+Outputs:
+  VPCID:
+    Description: "ID of VPC created by this template."
+    Value:
+      Ref: VPC
+    Export:
+      Name: VPCID
+  PrivSub1ID:
+    Description: "ID of private subnet 1 residing in this template's VPC."
+    Value:
+      Ref: PrivSub1
+    Export:
+      Name: PrivSub1ID
+  PubSub1ID:
+    Description: "ID of public subnet 1 residing in this template's VPC."
+    Value:
+      Ref: PubSub1
+    Export:
+      Name: PubSub1ID
+  PrivSub2ID:
+    Description: "ID of private subnet 2 residing in this template's VPC."
+    Value:
+      Ref: PrivSub2
+    Export:
+      Name: PrivSub2ID
+  PubSub2ID:
+    Description: "ID of public subnet 2 residing in this template's VPC."
+    Value:
+      Ref: PubSub2
+    Export:
+      Name: PubSub2ID
+  PrivSub3ID:
+    Description: "ID of private subnet 3 residing in this template's VPC."
+    Value:
+      Ref: PrivSub3
+    Export:
+      Name: PrivSub3ID
+  PubSub3ID:
+    Description: "ID of public subnet 3 residing in this template's VPC."
+    Value:
+      Ref: PubSub3
+    Export:
+      Name: PubSub3ID

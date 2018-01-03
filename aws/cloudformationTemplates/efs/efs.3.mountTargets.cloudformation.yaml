@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: "EFS deployment across all AZs in a given region."
+Resources:
+  DefaultSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Enable TCP on port 8080, SSH on port 22, and NFS on port 2049."
+      SecurityGroupIngress:
+        - IpProtocol: TCP
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: TCP
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: TCP
+          FromPort: 2049
+          ToPort: 2049
+          CidrIp: 0.0.0.0/0
+      VpcId:
+        Fn::ImportValue:
+          VPCID
+  EFSFileSystem:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      Encrypted: false
+  EFSMountTarget1:
+    Type: AWS::EFS::MountTarget
+    DependsOn:
+      - EFSFileSystem
+      - DefaultSG
+    Properties:
+      FileSystemId:
+        Ref: EFSFileSystem
+      SecurityGroups:
+        - Ref: DefaultSG
+      SubnetId:
+        Fn::ImportValue:
+          PubSub1ID
+  EFSMountTarget2:
+    Type: AWS::EFS::MountTarget
+    DependsOn:
+      - EFSFileSystem
+      - DefaultSG
+    Properties:
+      FileSystemId:
+        Ref: EFSFileSystem
+      SecurityGroups:
+        - Ref: DefaultSG
+      SubnetId:
+        Fn::ImportValue:
+          PubSub2ID
+  EFSMountTarget3:
+    Type: AWS::EFS::MountTarget
+    DependsOn:
+      - EFSFileSystem
+      - DefaultSG
+    Properties:
+      FileSystemId:
+        Ref: EFSFileSystem
+      SecurityGroups:
+        - Ref: DefaultSG
+      SubnetId:
+        Fn::ImportValue:
+          PubSub3ID

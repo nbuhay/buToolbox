@@ -1,0 +1,6 @@
+---
+applications:
+- name: Hello-World-Flask
+  memory: 128M
+  instances: 3 
+  buildpack: python_buildpack
