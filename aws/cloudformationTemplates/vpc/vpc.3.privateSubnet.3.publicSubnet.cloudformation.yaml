@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: "Generic VPC creation with public and private subnets."
+Description: "Generic VPC creation with public and private subnets.  NOTE: will be charged per allocation of each NAT Gateway as 1 full hour per build."
 Parameters:
   VPCCIDR:
     Type: String
