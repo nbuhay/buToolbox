@@ -1,4 +1,4 @@
-### Git
+### Git ###
 function gl () { git log --oneline -$1; }
 alias gl5='gl 5'
 alias gs='git status'
@@ -13,11 +13,11 @@ alias gpo='git push origin'
 alias gaacm='gaa && gcm'
 alias gbsu='git branch --set-upstream-to'
 
-### General Linux
+### General Linux ###
 alias hg='history | grep'
 alias ll='ls -la'
 
-### Nodejs
+### Node.js ###
 export NODE_PATH=./
 alias nodemond='NODE_ENV=dev nodemon'
 alias nodemont='NODE_ENV=test nodemon'
@@ -25,7 +25,7 @@ alias nodemonp='NODE_ENV=prod nodemon'
 alias test='NODE_ENV=test npm test'
 alias nodebug='npm run debug'
 
-### Vagrant
+### Vagrant ###
 alias vs='vagrant status'
 alias vup='vagrant up'
 alias vupp='vagrant up --provision'
