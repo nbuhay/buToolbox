@@ -5,5 +5,8 @@
 ### Vagrant ###
 **/.vagrant
 
+### Node.js ###
+**/*node_modules/*
+
 ### Python ###
 **/*.pyc
