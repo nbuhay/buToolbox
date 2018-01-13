@@ -1,0 +1,8 @@
+{
+  "name": "ssl-spike",
+  "version": "0.0.0",
+  "description": "Node.js app with a self-signed SSL certificate.",
+  "dependencies": {
+    "express": "^4.16.2"
+  }
+}
