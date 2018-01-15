@@ -46,7 +46,7 @@ Copy the file `2018-1-15-s3.test.txt` down from S3 to the local system and verif
 $ aws s3 cp s3://nodejs-aws-sdk-object-upload/2018-1-15-s3.test.txt s3.test.from.bucket.txt
 download: s3://nodejs-aws-sdk-object-upload/2018-1-15-s3.test.txt to ./s3.test.from.bucket.txt
 
-$ cat s3.text.from.bucket.txt
+$ cat s3.test.from.bucket.txt
 Hello from AWS S3 bucket!
 ```
 
