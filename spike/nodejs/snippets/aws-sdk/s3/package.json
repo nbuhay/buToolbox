@@ -1,0 +1,8 @@
+{
+  "name": "objectUpload",
+  "version": "0.0.0",
+  "description": "upload object to an owned S3 bucket",
+  "dependencies": {
+    "aws-sdk": "^2.181.0"
+  }
+}
