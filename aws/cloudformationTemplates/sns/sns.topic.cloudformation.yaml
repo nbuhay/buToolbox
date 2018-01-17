@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  SNS topic with email subscriber.
+Parameters:
+  UserEmail:
+    Type: String
+    Description: Email recipient who will receive a subscription notice.
+    Default: dummy.email@dummy.email.guru
+  TopicName:
+    Type: String
+    Default: aws-topic
+Resources:
+  SNSTopic:
+    Type: AWS::SNS::Topic
+    Properties: 
+      DisplayName: lambda-top-stories
+      Subscription:
+        - Endpoint:
+            Ref: UserEmail
+          Protocol: email
+      TopicName:
+        Ref: TopicName
