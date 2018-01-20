@@ -13,7 +13,7 @@ Resources:
   SNSTopic:
     Type: AWS::SNS::Topic
     Properties: 
-      DisplayName: lambda-top-stories
+      DisplayName: TopicName
       Subscription:
         - Endpoint:
             Ref: UserEmail

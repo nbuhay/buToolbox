@@ -3,6 +3,6 @@
   "version": "0.0.0",
   "description": "throw-away test environment for learning",
   "dependencies": {
-  	
+    "aws-sdk": "^2.181.0"
   }
 }
