@@ -1,8 +1,7 @@
 {
   "name": "spike",
-  "version": "0.0.0",
-  "description": "throw-away test environment for learning",
+  "version": "1.0.0",
+  "description": "Test app package for spiking new Node.js and Javascript concepts.",
   "dependencies": {
-    "aws-sdk": "^2.181.0"
   }
 }
