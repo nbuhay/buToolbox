@@ -32,6 +32,7 @@ alias vupp='vagrant up --provision'
 alias vh='vagrant halt'
 alias vssh='vagrant ssh'
 alias vsus='vagrant suspend'
+alias vgs='vagrant global-status'
 
 ### Docker ###
 alias dps='docker ps'
