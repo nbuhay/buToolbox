@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Creates an SNS topic with an email endpoint.
+Parameters:
+  TopicName:
+    Type: String
+    Default: test-sns-topic
+  UserEmail:
+    Type: String
+    Description: Email recipient who will receive a subscription notice.
+    Default: dummy.email@dummy.email.guru
+Resources:
+  SNSTopic:
+    Type: AWS::SNS::Topic
+    Properties: 
+      DisplayName: 
+        Ref: TopicName
+      Subscription:
+        - Endpoint:
+            Ref: UserEmail
+          Protocol: email
+      TopicName: 
+        Ref: TopicName

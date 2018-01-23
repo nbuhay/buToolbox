@@ -1,0 +1,8 @@
+{
+  "name": "publishSnsTopic",
+  "version": "0.0.0",
+  "description": "Send a message to a SNS topic",
+  "dependencies": {
+    "aws-sdk": "^2.181.0"
+  }
+}
