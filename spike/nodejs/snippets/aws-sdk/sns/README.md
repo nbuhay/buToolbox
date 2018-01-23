@@ -77,8 +77,7 @@ Verify the emails have been received in the the email recipient account.
 }
 ```
 
-Delete the SNS topic.
+Cleanup the SNS topic by deleting the CloudFormation stack.
 ```bash
-$ aws sns delete-topic \
-  --topic-arn arn:aws:sns:us-east-1:12345678910:test-sns-topic
+$ aws cloudformation delete-stack --stack-name sns-topic
 ```
