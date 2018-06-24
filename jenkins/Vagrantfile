@@ -25,6 +25,7 @@ Vagrant.configure("2") do |config|
     d.run "jenkins",
       image: "jenkinsci/blueocean",
       # -m < 2GB crashes Jenkins`
+      # docker.sock volume enables Jenkins to use local docker cli
       args: "-u root \
              -m 2GB \
              -p 8080:8080 -p 50000:50000 \
