@@ -21,3 +21,14 @@ spec:
           ports:
             - containerPort: 8080
             - containerPort: 50000
+          securityContext:
+            runAsUser: 0 # permissions for docker.sock
+          volumeMounts:
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
+      # enable docker using the K8s node's docker.sock
+      volumes:
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket
