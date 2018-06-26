@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: etcd-bootstrap
+  labels:
+    app: etcd
+spec:
+  template:
+    metadata:
+      labels:
+        app: etcd
+    spec:
+      containers:
+      - name: etcd-bootstrap
+        image: quay.io/coreos/etcd:latest
+        imagePullPolicy: Always
+        env:
+        - name: 'ETCDCTL_API'
+          value: '3'
+        args:
+        - 'put'
+        - 'foo'
+        - 'bar'
+        - '--endpoints=etcd-client:2379'
+        command:
+        - 'etcdctl'
+      restartPolicy: Never
