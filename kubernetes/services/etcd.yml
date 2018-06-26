@@ -47,6 +47,9 @@ spec:
     - containerPort: 2380
       name: server
       protocol: TCP
+    env:
+    - name: 'ETCDCTL_API'
+      value: '3'
   restartPolicy: Always
 
 ---
@@ -106,6 +109,9 @@ spec:
     - containerPort: 2380
       name: server
       protocol: TCP
+    env:
+    - name: 'ETCDCTL_API'
+      value: '3'
   restartPolicy: Always
 
 ---
@@ -165,6 +171,9 @@ spec:
     - containerPort: 2380
       name: server
       protocol: TCP
+    env:
+    - name: 'ETCDCTL_API'
+      value: '3'
   restartPolicy: Always
 
 ---
@@ -224,6 +233,9 @@ spec:
     - containerPort: 2380
       name: server
       protocol: TCP
+    env:
+    - name: 'ETCDCTL_API'
+      value: '3'
   restartPolicy: Always
 
 ---
@@ -283,6 +295,9 @@ spec:
     - containerPort: 2380
       name: server
       protocol: TCP
+    env:
+    - name: 'ETCDCTL_API'
+      value: '3'
   restartPolicy: Always
 
 ---
