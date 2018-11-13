@@ -2,6 +2,22 @@
 # vi: set ft=ruby :
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "ansible/tower"
+  config.vm.define "ansible-test-node" # vagrant cli
+  config.vm.box = "hashicorp/precise64"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.name = "ansible-test-node" # virtualbox GUI
+  end
+
+  config.vm.provision "shell", inline: <<-SHELL
+    apt-get update
+    apt-get install software-properties-common
+    apt-get install python-software-properties
+    apt-add-repository --yes ppa:ansible/ansible
+    apt-get install ansible
+  SHELL
+
   config.vm.network "private_network", type: "dhcp"
 end
+
+
