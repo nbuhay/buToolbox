@@ -11,3 +11,6 @@
 
 ### Python ###
 **/*.pyc
+
+### Ansible ###
+ansible/vagrantIps/*.ip_addr.info

@@ -1,23 +1,111 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+# Setup for Lynda.com:  Ansible Essential Training
+# https://www.lynda.com/Ansible-tutorials/Ansible-Essential-Training/677178-2.html
 Vagrant.configure("2") do |config|
-  config.vm.define "ansible-test-node" # vagrant cli
-  config.vm.box = "hashicorp/precise64"
 
-  config.vm.provider "virtualbox" do |vb|
-    vb.name = "ansible-test-node" # virtualbox GUI
+  # glboal variables
+  ANSIBLE_BOX = "ansible/tower"
+  INVENTORY_BOX = "bento/ubuntu-16.04"
+
+  def provisionPython(vm)
+    vm.vm.provision "shell", inline: <<-SHELL
+      apt-get update
+      apt-get install -y software-properties-common
+      apt-get install -y python-software-properties
+    SHELL
   end
 
-  config.vm.provision "shell", inline: <<-SHELL
-    apt-get update
-    apt-get install software-properties-common
-    apt-get install python-software-properties
-    apt-add-repository --yes ppa:ansible/ansible
-    apt-get install ansible
-  SHELL
+  def getIpAddr(vm)
+    vm.vm.provision "shell", inline: <<-SHELL
+      ip addr > /vagrant/vagrantIps/$(hostname).ip_addr.info
+    SHELL
+  end
 
-  config.vm.network "private_network", type: "dhcp"
+  # Ansible Tower with netaddr
+  config.vm.define "ansible-tower", primary: true do |tower| # vagrant cli
+
+    config.vm.provider "virtualbox" do |vb|
+      vb.name = "ansible-tower" # virtualbox GUI
+    end
+
+    tower.vm.box = ANSIBLE_BOX
+    tower.vm.provision "shell", inline: <<-SHELL
+      yum -y update
+      yum -y install python-pip
+      pip install --upgrade pip
+      pip install netaddr
+
+      # ip addr show eth1 | grep "inet " | awk '{print $2}' | cut -f1 -d "/"
+    SHELL
+    getIpAddr(tower)
+    tower.vm.network "private_network", type: "dhcp"
+  end
+
+  # Web 
+  config.vm.define "ansible-web-0" do |web|
+    config.vm.provider "virtualbox" do |vb|
+      vb.name = "ansible-web-0" # virtualbox GUI
+    end
+    web.vm.hostname = "ansible-web-0"
+    web.vm.box = INVENTORY_BOX
+    provisionPython(web)
+    getIpAddr(web)
+    web.vm.network "private_network", type: "dhcp"
+  end
+
+  config.vm.define "ansible-web-1" do |web|
+    config.vm.provider "virtualbox" do |vb|
+      vb.name = "ansible-web-1" # virtualbox GUI
+    end
+    web.vm.hostname = "ansible-web-1"
+    web.vm.box = INVENTORY_BOX
+    provisionPython(web)
+    getIpAddr(web)
+    web.vm.network "private_network", type: "dhcp"
+  end
+
+  # DB
+  config.vm.define "ansible-db-0" do |db|
+    config.vm.provider "virtualbox" do |vb|
+      vb.name = "ansible-db-0" # virtualbox GUI
+    end
+    db.vm.hostname = "ansible-db-0"
+    db.vm.box = INVENTORY_BOX
+    provisionPython(db)
+    getIpAddr(db)
+    db.vm.network "private_network", type: "dhcp"
+  end
+
+  config.vm.define "ansible-db-1" do |db|
+    config.vm.provider "virtualbox" do |vb|
+      vb.name = "ansible-db-1" # virtualbox GUI
+    end
+    db.vm.hostname = "ansible-db-1"
+    db.vm.box = INVENTORY_BOX
+    provisionPython(db)
+    getIpAddr(db)
+    db.vm.network "private_network", type: "dhcp"
+  end
+
+  # Docker with local ansible
+  config.vm.define "ansible-docker-0" do |docker|
+    config.vm.provider "virtualbox" do |vb|
+      vb.name = "ansible-docker-0" # virtualbox GUI
+    end
+    docker.vm.hostname = "ansible-docker-0"
+    docker.vm.box = INVENTORY_BOX
+    config.vm.provision "docker"
+    docker.vm.provision "shell", inline: <<-SHELL
+      apt-get update
+      apt-get install -y software-properties-common
+      apt-get install -y python-software-properties
+      apt-add-repository -y ppa:ansible/ansible
+      apt-get install -y ansible
+    SHELL
+    getIpAddr(docker)
+    docker.vm.network "private_network", type: "dhcp"
+  end
+
 end
-
-
