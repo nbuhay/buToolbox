@@ -1,0 +1,29 @@
+# run only tasks with create-file tag
+#   ansible-playbook -i inventory playbooks/lynda/ansibleEssential/2-2-tasks.yaml --tags create-file
+# skip tasks with create-file tag, run all others
+#   ansible-playbook -i inventory playbooks/lynda/ansibleEssential/2-2-tasks.yaml --skip-tags create-file
+---
+- hosts: all
+  tasks:
+    - name: create a file
+      file:
+        dest: /tmp/file
+        state: touch
+      tags:
+        - create-file
+- hosts: all:!db1
+  tags:
+    - delete-file
+  tasks:
+    - name: delete a file
+      file:
+        dest: /tmp/file
+        state: absent
+- hosts: db1
+  tasks:
+    - name: delete a file
+      file:
+        dest: /tmp/file
+        state: absent
+      tags:
+        - delete-file

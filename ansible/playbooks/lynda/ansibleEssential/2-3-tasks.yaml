@@ -1,0 +1,18 @@
+# Use 'connection: local' for faster tasks run against the ansible host.  Does not connect via SSH.
+---
+# slower method that connects via ssh
+- hosts: localhost
+  tasks:
+    - name: create a file via ssh connection
+      file:
+        dest: /tmp/ssh-created
+        state: touch
+
+# faster method leveraging local connection
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: create a local file via direct local connection
+      file:
+        dest: /tmp/direct-created
+        state: touch
