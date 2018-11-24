@@ -1,0 +1,23 @@
+[all]
+web0 ansible_host=GET_FROM_VAGRANTIPS_DIR
+web1 ansible_host=GET_FROM_VAGRANTIPS_DIR
+db0 ansible_host=GET_FROM_VAGRANTIPS_DIR
+db1 ansible_host=GET_FROM_VAGRANTIPS_DIR
+docker0 ansible_host=GET_FROM_VAGRANTIPS_DIR
+
+[web-test]
+web0
+
+[web]
+web0
+web1
+
+[db]
+db0
+db1
+
+[backup]
+db1
+
+[docker]
+docker0
