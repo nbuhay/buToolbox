@@ -157,7 +157,7 @@ Run from the host of Minikube and Ansible Tower.
 
 ```
 $ pwd
-~/git//bu-toolbox/ansible/minikubeLab
+~/git//bu-toolbox/ansible
 
 $ minikube delete
 
