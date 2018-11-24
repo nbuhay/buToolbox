@@ -1,0 +1,10 @@
+---
+- name: create a new minikube namespace
+  hosts: localhost
+  tasks:
+    - name: create the namespace
+      k8s:
+        name: '{{k8s_ns}}'
+        state: '{{ns_state}}'
+        api_version: v1
+        kind: Namespace
