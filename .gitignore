@@ -14,3 +14,6 @@
 
 ### Ansible ###
 ansible/vagrantIps/*.ip_addr.info
+ansible/minikubeLab/*.crt
+ansible/minikubeLab/*.key
+**/*.retry
