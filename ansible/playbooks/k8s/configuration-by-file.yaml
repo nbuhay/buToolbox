@@ -1,0 +1,17 @@
+---
+- name: K8s configuration by source file
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: apply configuration
+      tags: apply
+      k8s:
+        state: present
+        namespace: '{{ns}}'
+        src: '{{src_manifest}}'
+    - name: delete configuration
+      tags: delete
+      k8s:
+        state: absent
+        namespace: '{{ns}}'
+        src: '{{src_manifest}}'
