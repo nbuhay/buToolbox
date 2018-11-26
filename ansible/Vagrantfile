@@ -104,6 +104,10 @@ Vagrant.configure("2") do |config|
       apt-get install -y python-software-properties
       apt-add-repository -y ppa:ansible/ansible
       apt-get install -y ansible
+
+      # install Java so VM can become a Jenkins node
+      apt update
+      apt install -y default-jre
     SHELL
     getIpAddr(docker)
     docker.vm.network "private_network", type: "dhcp"
