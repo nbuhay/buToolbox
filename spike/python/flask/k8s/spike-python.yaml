@@ -2,7 +2,7 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: spike-python
+  name: spike-python-flask
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
@@ -11,17 +11,17 @@ spec:
     http:
       paths:
       - backend:
-          serviceName: spike-python
+          serviceName: spike-python-flask
           servicePort: 8080
-        path: /spike-python
+        path: /spike-python-flask
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: spike-python
+  name: spike-python-flask
 spec:
   selector:
-    app: spike-python
+    app: spike-python-flask
   ports:
   - protocol: TCP
     port: 8080
@@ -30,21 +30,21 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: spike-python
+  name: spike-python-flask
   labels:
-    app: spike-python
+    app: spike-python-flask
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: spike-python
+      app: spike-python-flask
   template:
     metadata:
       labels:
-        app: spike-python
+        app: spike-python-flask
     spec:
       containers:
-        - name: spike-python
+        - name: spike-python-flask
           image: nbuhay/spike-python-flask:latest
           ports:
             - containerPort: 8080
