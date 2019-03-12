@@ -4,13 +4,20 @@ const http = require('http')
     , hostname = os.hostname()
 
 const server = http.createServer((req, res) => {
-  var date = new Date();
-  console.log(date + ': Request received by server');
+  let date = new Date()
+    , client = req.connection.remoteAddress
+  
+  console.log(`${date}: hostname ${hostname}: client ${req.connection.remoteAddress}`);
+
   res.statusCode = 200;
-  res.setHeader('Content-Type', 'text/plain');
-  res.end(`Date:     ${date}\n` +
-          `Hostname: ${hostname}\n` +
-          `Message:  Hello World from Node.js server!`);
+  res.setHeader('Content-Type', 'application/json');
+  resPayload = {
+    "date": date,
+    "hostname": hostname,
+    "client": client,
+    "msg": "Hello World from Node.js server!"
+  };
+  res.end(JSON.stringify(resPayload));
 });
 
 server.listen(port, '0.0.0.0', () => {
