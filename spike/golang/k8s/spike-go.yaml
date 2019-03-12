@@ -12,7 +12,7 @@ spec:
       paths:
       - backend:
           serviceName: spike-golang
-          servicePort: 8080
+          servicePort: 5000
         path: /spike-golang
 ---
 apiVersion: v1
@@ -24,8 +24,8 @@ spec:
     app: spike-golang
   ports:
   - protocol: TCP
-    port: 8080
-    targetPort: 8080
+    port: 5000
+    targetPort: 5000
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -47,4 +47,4 @@ spec:
         - name: spike-golang
           image: nbuhay/spike-golang:latest
           ports:
-            - containerPort: 8080
+            - containerPort: 5000
