@@ -1,0 +1,50 @@
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: spike-go
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: k8s.localhost
+    http:
+      paths:
+      - backend:
+          serviceName: spike-go
+          servicePort: 8080
+        path: /spike-go
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spike-go
+spec:
+  selector:
+    app: spike-go
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spike-go
+  labels:
+    app: spike-go
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: spike-go
+  template:
+    metadata:
+      labels:
+        app: spike-go
+    spec:
+      containers:
+        - name: spike-go
+          image: nbuhay/spike-go:latest
+          ports:
+            - containerPort: 8080

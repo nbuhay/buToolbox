@@ -3,10 +3,17 @@ package main
 import (
   "net/http"
   "time"
+  "os"
 )
 
 func sayHello(w http.ResponseWriter, r *http.Request) {
-  message := time.Now().String() + ": Hello from Golang!"
+  hostname, err := os.Hostname()
+  if err != nil {
+    panic(err)
+  }
+  message := "Date:      " + time.Now().String() +
+             "\nHostname:  " + hostname +
+             "\nMessage:   Hello from Golang!"
   w.Write([]byte(message))
 }
 
