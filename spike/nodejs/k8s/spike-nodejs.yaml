@@ -1,0 +1,50 @@
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: spike-nodejs
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: k8s.localhost
+    http:
+      paths:
+      - backend:
+          serviceName: spike-nodejs
+          servicePort: 3000
+        path: /
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spike-nodejs
+spec:
+  selector:
+    app: spike-nodejs
+  ports:
+  - protocol: TCP
+    port: 3000
+    targetPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spike-nodejs
+  labels:
+    app: spike-nodejs
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: spike-nodejs
+  template:
+    metadata:
+      labels:
+        app: spike-nodejs
+    spec:
+      containers:
+        - name: spike-nodejs
+          image: nbuhay/spike-nodejs:latest
+          ports:
+            - containerPort: 3000
