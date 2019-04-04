@@ -1,0 +1,188 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+
+  # Reverse Proxy - L4 lb tier in-front of Rancher HA
+  LB_BOX_NAME = "reverse-proxy-lb"
+  LB_PROVIDER = "virtualbox"
+  LB_BOX = "centos/7"
+  LB_BOX_MEMORY = 512
+  LB_BOX_CPUS = 1
+  LB_DOCKER_IMAGE = "nginx:1.15.10"
+  LB_PRIVATE_IP = "172.30.1.5"
+
+  # Rancher HA Nodes - 3 node setup
+  RANCHER_BOX = "centos/7"
+  RANCHER_PROVIDER = "virtualbox"
+  RANCHER_PRIVATE_IP_0 = "172.30.1.6"
+  RANCHER_PRIVATE_IP_1 = "172.30.1.7"
+  RANCHER_PRIVATE_IP_2 = "172.30.1.8"
+
+  # Platform Toolchain - host all PoC product services (Rancher, GitLab, etc.)
+  PLATFORM_TOOLCHAIN_BOX = "centos/7"
+  RANCHER_DOCKER_IMAGE = "rancher/rancher:latest"
+  GITLAB_DOCKER_IMAGE = "gitlab/gitlab-ce"
+  GITLAB_RUNNER_DOCKER_IMAGE = "gitlab-runner:latest"
+
+  # Mock Data Center VM - bare install, provision K8s Cluster via Rancher
+  DATA_CENTER_BOX = "centos/7"
+
+  # Global
+  LOCAL_PUBLIC_NETWORK_BRIDGE_INTERFACE = "Killer E2200 Gigabit Ethernet Controller"
+
+  config.vm.define LB_BOX_NAME, primary: true do |lb|
+    lb.vm.box = LB_BOX
+    lb.vm.provider LB_PROVIDER do |vb|
+      vb.name = LB_BOX_NAME
+      vb.memory = LB_BOX_MEMORY
+      vb.cpus = LB_BOX_CPUS
+    end
+
+    lb.vm.provision "shell" do |s|
+      s.args = [RANCHER_PRIVATE_IP_0, RANCHER_PRIVATE_IP_1, RANCHER_PRIVATE_IP_2]
+      s.inline = "
+      cat << EOL > /etc/nginx.conf
+worker_processes 4;
+worker_rlimit_nofile 40000;
+
+events {
+    worker_connections 8192;
+}
+
+stream {
+    upstream rancher_servers_http {
+        least_conn;
+        server $1:80 max_fails=3 fail_timeout=5s;
+        server $2:80 max_fails=3 fail_timeout=5s;
+        server $3:80 max_fails=3 fail_timeout=5s;
+    }
+    server {
+        listen     80;
+        proxy_pass rancher_servers_http;
+    }
+
+    upstream rancher_servers_https {
+        least_conn;
+        server $1:443 max_fails=3 fail_timeout=5s;
+        server $2:443 max_fails=3 fail_timeout=5s;
+        server $3:443 max_fails=3 fail_timeout=5s;
+    }
+    server {
+        listen     443;
+        proxy_pass rancher_servers_https;
+    }
+}
+EOL
+      "
+    end
+
+    lb.vm.provision "shell" do |s|
+      s.args = [RANCHER_PRIVATE_IP_0, RANCHER_PRIVATE_IP_1, RANCHER_PRIVATE_IP_2]
+      s.inline = "
+      cat << EOL > rancher-cluster.yml
+---
+nodes:
+  - address: $1
+    user: vagrant
+    ssh_key_path: /home/vagrant/node_0.id_rsa
+    role: [controlplane,worker,etcd]
+  - address: $2
+    user: vagrant
+    ssh_key_path: /home/vagrant/node_1.id_rsa
+    role: [controlplane,worker,etcd]
+  - address: $3
+    user: vagrant
+    ssh_key_path: /home/vagrant/node_2.id_rsa
+    role: [controlplane,worker,etcd]
+
+services:
+  etcd:
+    snapshot: true
+    creation: 6h
+    retention: 24h
+EOL
+      "
+    end
+
+    # install rke - https://rancher.com/docs/rke/v0.1.x/en/installation/#download-the-rke-binary
+    lb.vm.provision "shell" do |s|
+      s.inline = "
+      curl -kL -o /bin/rke https://github.com/rancher/rke/releases/download/v0.2.1/rke_linux-amd64
+      chmod +x /bin/rke
+      rke -v
+      "
+    end
+
+    lb.vm.provision "docker" do |d|
+      d.pull_images LB_DOCKER_IMAGE
+      d.run "nginx",
+        image: LB_DOCKER_IMAGE,
+        args: "-p 9090:80 -p 9091:443 -v /etc/nginx.conf:/etc/nginx/nginx.conf"
+    end
+
+    lb.vm.synced_folder ".", "/vagrant", type: "rsync"
+
+    lb.vm.network "private_network", ip: LB_PRIVATE_IP
+    lb.vm.network "public_network", bridge: LOCAL_PUBLIC_NETWORK_BRIDGE_INTERFACE
+  end
+
+  if ENV['ENV'] != 'test'
+    config.vm.define "rancher-0" do |r|
+      r.vm.box = RANCHER_BOX
+      r.vm.provider RANCHER_PROVIDER do |p|
+        p.name = "rancher-0"
+        p.memory = 2024
+        p.cpus = 2
+      end
+
+      r.vm.provision "shell" do |s|
+        s.inline = "
+        mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat /vagrant/id_rsa.pub >>  ~/.ssh/authorized_keys
+        "
+      end
+
+      r.vm.provision "docker"
+      r.vm.network "private_network", ip: RANCHER_PRIVATE_IP_0
+      r.vm.network "public_network", bridge: LOCAL_PUBLIC_NETWORK_BRIDGE_INTERFACE
+    end
+
+    config.vm.define "rancher-1" do |r|
+      r.vm.box = RANCHER_BOX
+      r.vm.provider RANCHER_PROVIDER do |p|
+        p.name = "rancher-1"
+        p.memory = 2024
+        p.cpus = 2
+      end
+
+      r.vm.provision "shell" do |s|
+        s.inline = "
+        mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat /vagrant/id_rsa.pub >>  ~/.ssh/authorized_keys
+        "
+      end
+
+      r.vm.provision "docker"
+      r.vm.network "private_network", ip: RANCHER_PRIVATE_IP_1
+      r.vm.network "public_network", bridge: LOCAL_PUBLIC_NETWORK_BRIDGE_INTERFACE
+    end
+
+    config.vm.define "rancher-2" do |r|
+      r.vm.box = RANCHER_BOX
+      r.vm.provider RANCHER_PROVIDER do |p|
+        p.name = "rancher-2"
+        p.memory = 2024
+        p.cpus = 2
+      end
+
+      r.vm.provision "shell" do |s|
+        s.inline = "
+        mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat /vagrant/id_rsa.pub >>  ~/.ssh/authorized_keys
+        "
+      end
+
+      r.vm.provision "docker"
+      r.vm.network "private_network", ip: RANCHER_PRIVATE_IP_2
+      r.vm.network "public_network", bridge: LOCAL_PUBLIC_NETWORK_BRIDGE_INTERFACE
+    end
+  end
+end
