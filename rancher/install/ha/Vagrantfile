@@ -118,7 +118,7 @@ EOL
       d.pull_images LB_DOCKER_IMAGE
       d.run "nginx",
         image: LB_DOCKER_IMAGE,
-        args: "-p 9090:80 -p 9091:443 -v /etc/nginx.conf:/etc/nginx/nginx.conf"
+        args: "-p 80:80 -p 443:443 -v /etc/nginx.conf:/etc/nginx/nginx.conf"
     end
 
     lb.vm.synced_folder ".", "/vagrant", type: "rsync"
