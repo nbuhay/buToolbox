@@ -1,28 +1,115 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-Vagrant.require_version ">= 2.1.1"
-
 Vagrant.configure("2") do |config|
-  config.vm.box = "centos/7"
-  config.vm.provider "virtualbox" do |v|
-    v.name = "rancher"
-    # keep memory high for stability
-    v.memory = 4096
-    v.cpus = 3
+
+  # Platform Toolchain - host all PoC product services (Rancher, GitLab, etc.)
+  PLATFORM_TOOLCHAIN_BOX = "centos/7"
+  PLATFORM_TOOLCHAIN_IP = "192.168.0.49"
+  PLATFORM_TOOLCHAIN_MEMORY = 2048
+  PLATFORM_TOOLCHAIN_VCPUS = 2
+  RANCHER_DOCKER_IMAGE = "rancher/rancher:latest"
+  GITLAB_DOCKER_IMAGE = "gitlab/gitlab-ce:latest"
+  GITLAB_RUNNER_DOCKER_IMAGE = "gitlab/gitlab-runner:latest"
+
+  # Mock Data Center VM - bare install, provision K8s Cluster via Rancher
+  DATA_CENTER_BOX = "centos/7"
+  DATA_CENTER_DIT_IP = "192.168.0.50"
+  DATA_CENTER_DIT_MEMORY = 2048
+  DATA_CENTER_DIT_VCPUS = 2
+
+  # Global
+  LOCAL_PUBLIC_NETWORK_BRIDGE_INTERFACE = "Killer E2200 Gigabit Ethernet Controller"
+
+  def outputIps(vm)
+    vm.vm.provision "shell", inline: <<-SHELL
+      ip addr show | grep inet
+    SHELL
   end
 
-  config.vm.network "private_network", type: "dhcp"
-  config.vm.network "forwarded_port", guest: 443, host: 443, host_ip: "127.0.0.1"
-  config.vm.network "forwarded_port", guest: 80, host: 80, host_ip: "127.0.0.1"
-  
-  # Install Rancher - https://rancher.com/
-  config.vm.provision "docker" do |d|
-    d.pull_images "rancher/rancher:latest"
-    d.run "rancher",
-      image: " rancher/rancher:latest",
-      restart: "unless-stopped",
-      args: "-p 80:80 -p 443:443 -v '/opt/rancher:/var/lib/rancher'"
+  config.vm.define "platform-toolchain", primary: true do |platform|
+
+    # Rancher Specs - https://rancher.com/docs/rancher/v2.x/en/installation/requirements/
+    config.vm.box = PLATFORM_TOOLCHAIN_BOX
+    config.vm.provider "virtualbox" do |vb|
+      vb.name = "platform-toolchain" # show this name in virtualbox GUI
+      vb.memory = PLATFORM_TOOLCHAIN_MEMORY
+      vb.cpus = PLATFORM_TOOLCHAIN_VCPUS
+    end
+
+    # Platform Toolchain
+    #   Rancher - https://PLATFORM_TOOLCHAIN_IP:8443
+    #   GitLab - http://PLATFORM_TOOLCHAIN_IP:880
+    # Manual Steps (post vagrant up)
+    #   GitLab
+    #     Register the GitLab Runner - https://docs.gitlab.com/runner/register/index.html#docker
+    #     Enable call to local k8s VMs - https://docs.gitlab.com/ee/security/webhooks.html
+    platform.vm.provision "docker" do |d|
+
+      # Rancher - (bottom of page) https://rancher.com/products/rancher/
+      d.pull_images RANCHER_DOCKER_IMAGE
+      d.run "rancher",
+        image: RANCHER_DOCKER_IMAGE,
+        restart: "unless-stopped",
+        args: "-p 80:80 \
+               -p 443:443 \
+               -v '/opt/rancher:/var/lib/rancher'"
+
+      # GitLab - https://docs.gitlab.com/ee/ci/docker/using_docker_images.html
+      d.pull_images GITLAB_DOCKER_IMAGE
+      d.run "gitlab",
+        image: GITLAB_DOCKER_IMAGE,
+        restart: "always",
+        args: "-p 880:80 \
+               -p 8443:443 \
+               -v /srv/gitlab/config:/etc/gitlab \
+               -v /srv/gitlab/logs:/var/log/gitlab \
+               -v /srv/gitlab/data:/var/opt/gitlab"
+
+      # GitLab Runner - https://docs.gitlab.com/runner/install/docker.html
+      d.pull_images GITLAB_RUNNER_DOCKER_IMAGE
+      d.run "gitlab-runner",
+        image: GITLAB_RUNNER_DOCKER_IMAGE,
+        restart: "always",
+        args: "-v /srv/gitlab-runner/config:/etc/gitlab-runner \
+               -v /var/run/docker.sock:/var/run/docker.sock"
+    end
+
+    # install JQ - for adding k8s clusters in GitLab - https://rancher.com/blog/2018/2018-08-07-cicd-pipeline-k8s-autodevops-rancher-and-gitlab/
+    platform.vm.provision "shell", inline: <<-SHELL
+      yum install epel-release -y
+      yum install jq -y
+    SHELL
+
+    outputIps(platform)
+
+    # bridge allows VMs to communicate to eachother
+    platform.vm.network "private_network", type: "dhcp"
+    # explicitly assign VM a known IP on the bridge
+    platform.vm.network "public_network", ip: PLATFORM_TOOLCHAIN_IP, bridge: LOCAL_PUBLIC_NETWORK_BRIDGE_INTERFACE
+
+  end
+
+  # DIT K8s cluster
+  config.vm.define "data-center-dit" do |dc|
+    config.vm.provider "virtualbox" do |vb|
+      vb.name = "data-center-dit"
+      vb.memory = DATA_CENTER_DIT_MEMORY
+      vb.cpus = DATA_CENTER_DIT_VCPUS
+    end
+
+    dc.vm.hostname = "data-center-dit"
+    dc.vm.box = DATA_CENTER_BOX
+
+    dc.vm.provision "docker"
+
+    # show ips
+    outputIps(dc)
+
+    # bridge allows VMs to communicate to eachother
+    dc.vm.network "private_network", type: "dhcp"
+    # explicitly assign VM a known IP on the bridge
+    dc.vm.network "public_network", ip: DATA_CENTER_DIT_IP, bridge: LOCAL_PUBLIC_NETWORK_BRIDGE_INTERFACE
   end
 
 end
