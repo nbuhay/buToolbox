@@ -1,0 +1,493 @@
+{
+	"info": {
+		"_postman_id": "9602da4d-3ffe-4c95-9672-a907e225be04",
+		"name": "K8s Master Plan",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "GitLab",
+			"item": []
+		},
+		{
+			"name": "Rancher",
+			"item": [
+				{
+					"name": "v2.x",
+					"item": [
+						{
+							"name": "clusters",
+							"item": [
+								{
+									"name": "import existing",
+									"item": [
+										{
+											"name": "create",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"id": "b9125c99-bdab-4691-92f3-4024bd51001d",
+														"exec": [
+															"pm.test(\"Cluster created sucessfully\", function () {",
+															"    pm.response.to.have.status(201);",
+															"    pm.environment.set(\"rancher_cluster_importExisting_id\", pm.response.json().id);",
+															"});"
+														],
+														"type": "text/javascript"
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Accept",
+														"type": "text",
+														"value": "application/json"
+													},
+													{
+														"key": "Content-Type",
+														"type": "text",
+														"value": "application/json"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n\t\"name\": \"{{rancher_cluster_importExisting_name}}\"\n}"
+												},
+												"url": {
+													"raw": "https://{{rancher_host}}/v3/clusters",
+													"protocol": "https",
+													"host": [
+														"{{rancher_host}}"
+													],
+													"path": [
+														"v3",
+														"clusters"
+													]
+												},
+												"description": "Create a cluster with a given name."
+											},
+											"response": []
+										},
+										{
+											"name": "remove",
+											"request": {
+												"method": "DELETE",
+												"header": [
+													{
+														"key": "Accept",
+														"type": "text",
+														"value": "application/json"
+													},
+													{
+														"key": "Content-Type",
+														"type": "text",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "https://{{rancher_host}}/v3/clusters/{{rancher_cluster_importExisting_id}}",
+													"protocol": "https",
+													"host": [
+														"{{rancher_host}}"
+													],
+													"path": [
+														"v3",
+														"clusters",
+														"{{rancher_cluster_importExisting_id}}"
+													]
+												},
+												"description": "Create a cluster with a given name."
+											},
+											"response": []
+										}
+									],
+									"_postman_isSubFolder": true
+								},
+								{
+									"name": "rancher kubernetes engine",
+									"item": [
+										{
+											"name": "cluster",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"id": "b9125c99-bdab-4691-92f3-4024bd51001d",
+														"exec": [
+															"pm.test(\"Cluster created sucessfully\", function () {",
+															"    pm.response.to.have.status(201);",
+															"    pm.environment.set(\"rancher_cluster_rke_id\", pm.response.json().id);",
+															"});"
+														],
+														"type": "text/javascript"
+													}
+												}
+											],
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Accept",
+														"type": "text",
+														"value": "application/json"
+													},
+													{
+														"key": "Content-Type",
+														"type": "text",
+														"value": "application/json"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n\t\"name\": \"{{rancher_cluster_rke_name}}\",\n\t\"rancherKubernetesEngineConfig\": {\n\t\t\"kubernetesVersion\": \"{{rancher_cluster_rke_k8sVersion}}\",\n\t\t\"network\": {\n\t\t\t\"plugin\": \"{{rancher_cluster_rke_netProvider}}\"\n\t\t}\n\t}\n}"
+												},
+												"url": {
+													"raw": "https://{{rancher_host}}/v3/clusters",
+													"protocol": "https",
+													"host": [
+														"{{rancher_host}}"
+													],
+													"path": [
+														"v3",
+														"clusters"
+													]
+												},
+												"description": "Create a cluster with a given name."
+											},
+											"response": []
+										},
+										{
+											"name": "cluster",
+											"request": {
+												"method": "GET",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json",
+														"type": "text"
+													},
+													{
+														"key": "Content-Type",
+														"value": "application/json",
+														"type": "text"
+													}
+												],
+												"url": {
+													"raw": "https://{{rancher_host}}:{{rancher_port}}/v3/clusters/{{rancher_cluster_rke_id}}",
+													"protocol": "https",
+													"host": [
+														"{{rancher_host}}"
+													],
+													"port": "{{rancher_port}}",
+													"path": [
+														"v3",
+														"clusters",
+														"{{rancher_cluster_rke_id}}"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "registration token & cli commands",
+											"request": {
+												"method": "GET",
+												"header": [],
+												"url": {
+													"raw": "https://{{rancher_host}}/v3/clusters/{{rancher_cluster_rke_id}}/clusterregistrationtokens",
+													"protocol": "https",
+													"host": [
+														"{{rancher_host}}"
+													],
+													"path": [
+														"v3",
+														"clusters",
+														"{{rancher_cluster_rke_id}}",
+														"clusterregistrationtokens"
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "enable monitoring",
+											"request": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Content-Type",
+														"name": "Content-Type",
+														"value": "application/json",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n\t\"version\": \"0.0.3\"\n}"
+												},
+												"url": {
+													"raw": "https://{{rancher_host}}:443/v3/clusters/{{rancher_cluster_rke_id}}?action=enableMonitoring",
+													"protocol": "https",
+													"host": [
+														"{{rancher_host}}"
+													],
+													"port": "443",
+													"path": [
+														"v3",
+														"clusters",
+														"{{rancher_cluster_rke_id}}"
+													],
+													"query": [
+														{
+															"key": "action",
+															"value": "enableMonitoring"
+														}
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "remove",
+											"request": {
+												"method": "DELETE",
+												"header": [
+													{
+														"key": "Accept",
+														"type": "text",
+														"value": "application/json"
+													},
+													{
+														"key": "Content-Type",
+														"type": "text",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "https://{{rancher_host}}/v3/clusters/{{rancher_cluster_rke_id}}",
+													"protocol": "https",
+													"host": [
+														"{{rancher_host}}"
+													],
+													"path": [
+														"v3",
+														"clusters",
+														"{{rancher_cluster_rke_id}}"
+													]
+												},
+												"description": "Create a cluster with a given name."
+											},
+											"response": []
+										},
+										{
+											"name": "namespaces",
+											"request": {
+												"method": "GET",
+												"header": [],
+												"url": {
+													"raw": "https://{{rancher_host}}:443/v3/clusters/{{rancher_cluster_rke_id}}/namespaces",
+													"protocol": "https",
+													"host": [
+														"{{rancher_host}}"
+													],
+													"port": "443",
+													"path": [
+														"v3",
+														"clusters",
+														"{{rancher_cluster_rke_id}}",
+														"namespaces"
+													]
+												}
+											},
+											"response": []
+										}
+									],
+									"_postman_isSubFolder": true
+								},
+								{
+									"name": "list all",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "https://{{rancher_host}}:{{rancher_port}}/v3/clusters",
+											"protocol": "https",
+											"host": [
+												"{{rancher_host}}"
+											],
+											"port": "{{rancher_port}}",
+											"path": [
+												"v3",
+												"clusters"
+											]
+										},
+										"description": "Create a cluster with a given name."
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "tokens",
+							"item": [
+								{
+									"name": "generate new",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "73af70ed-2b38-4c94-b120-d084ccf086f7",
+												"exec": [
+													"pm.test(\"Token created sucessfully\", function () {",
+													"    pm.response.to.have.status(201);",
+													"    pm.environment.set(\"rancher_bearer_token\", pm.response.json().token);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"description\": \"api-admin-token\"\n}"
+										},
+										"url": {
+											"raw": "https://{{rancher_host}}:{{rancher_port}}/v3/tokens",
+											"protocol": "https",
+											"host": [
+												"{{rancher_host}}"
+											],
+											"port": "{{rancher_port}}",
+											"path": [
+												"v3",
+												"tokens"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						}
+					],
+					"auth": {
+						"type": "bearer",
+						"bearer": [
+							{
+								"key": "token",
+								"value": "{{rancher_bearer_token}}",
+								"type": "string"
+							}
+						]
+					},
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "85cf2caa-9d2e-4082-99af-fc050a726303",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "ae10dd92-cb4b-4843-b2b4-fdeee52a60dc",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					],
+					"_postman_isSubFolder": true
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{rancher_bearer_token}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "f3eb80a1-d7f6-48d4-a2f3-1c08a0698b84",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "94be8aa1-69dc-4601-b2b3-476ff11756f2",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "65977de9-75d3-4397-8a45-ec4216971310",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "9329637d-bd07-4dad-b1e5-1f1bef6501cb",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
