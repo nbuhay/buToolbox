@@ -1,0 +1,46 @@
+openapi: "3.0.0"
+info:
+  description: "A simple, sample OpenAPI v3 Spec."
+  version: "1.0.0"
+  title: "Bu-Toolbox Spike Services"
+  contact:
+    email: "nbuhay@gmail.com"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+servers:
+  - url: "http://poc.lucid.com"
+    description: "Non-production host"
+tags:
+- name: "Hello World Python Flask"
+  description: "A simple 'Hello World' Python Flask webservice."
+  externalDocs:
+    description: "Source code & documentation"
+    url: "https://github.com/nbuhay/bu-toolbox/tree/master/spike/python/flask"
+paths:
+  /:
+    get:
+      tags:
+      - "Hello World Python Flask"
+      summary: "Get the Hello World response"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  client:
+                    type: string
+                    example: '192.168.0.1'
+                  date:
+                    type: string
+                    format: date
+                    example: 'Tue, 17 Sep 2019 04:23:38 GMT'
+                  hostname:
+                    type: string
+                    example: '192.168.0.2'
+                  msg:
+                    type: string
+                    example: "Hello World from Python Flask!"
