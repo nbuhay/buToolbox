@@ -1,0 +1,27 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.define "sonarqube" # vagrant cli
+  config.vm.box = "bento/ubuntu-16.04"
+  
+  config.vm.provider "virtualbox" do |vb|
+    vb.name = "sonarqube" # virtualbox GUI
+    vb.memory = 3072
+  end
+  
+  config.vm.hostname = "sonarqube"
+
+  # Install Docker 
+  config.vm.provision "docker" do |d|
+    d.pull_images "sonarqube:latest"
+    d.run "sonarqube",
+      image: "sonarqube:latest",
+      args: "--network bridge -p 9000:9000 -p 9092:9092"
+  end
+
+  config.vm.network "private_network", type: "dhcp"
+  # forward more ports to guest VM here
+  config.vm.network "forwarded_port", guest: 9000, host: 9000, host_ip: "127.0.0.1"
+  config.vm.network "forwarded_port", guest: 9092, host: 9092, host_ip: "127.0.0.1"
+end
