@@ -10,7 +10,7 @@ var SNS = new AWS.SNS()
   }
 
 // format json for transit by adding \n and \t chars
-formattedData = JSON.stringify(data, null, '\t');
+let formattedData = JSON.stringify(data, null, '\t');
 
 var params = {
   Subject: `Hello from an AWS SNS Topic`,
@@ -18,7 +18,7 @@ var params = {
   TopicArn: process.env.TOPIC_ARN
 }
 
-SNS.publish(params, (err, data) => {
+SNS.publish(params, (err, publishData) => {
   if (err) console.log(err, err.stack); // an error occured
-  else console.log(data);
+  else console.log(publishData);
 });

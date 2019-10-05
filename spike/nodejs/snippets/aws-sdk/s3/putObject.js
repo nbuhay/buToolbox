@@ -21,9 +21,9 @@ fs.readFile('./s3.test.txt', (err, data) => {
   };
 
   // make put request
-  s3.putObject(params, (err, res) => {
-    if (err) {
-      console.error(`Error with S3 Upload: ${err}`);
+  s3.putObject(params, (error, res) => {
+    if (error) {
+      console.error(`Error with S3 Upload: ${error}`);
     } else {
       console.log(res);
       console.log('S3 Upload Successful!');
