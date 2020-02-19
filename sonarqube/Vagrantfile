@@ -12,16 +12,42 @@ Vagrant.configure("2") do |config|
   
   config.vm.hostname = "sonarqube"
 
-  # Install Docker 
+  # provision Docker
+  # install containers
+  #   Soanrqube
   config.vm.provision "docker" do |d|
     d.pull_images "sonarqube:latest"
     d.run "sonarqube",
-      image: "sonarqube:latest",
-      args: "--network bridge -p 9000:9000 -p 9092:9092"
+    image: "sonarqube:latest",
+    args: "--network bridge -p 9000:9000 -p 9092:9092"
   end
 
-  config.vm.network "private_network", type: "dhcp"
+  # install & configure SonarScanner locally
+  #   source: https://techexpert.tips/sonarqube/sonarqube-scanner-installation-ubuntu-linux/
+  $install_sonarscanner =<<-SCRIPT
+      apt-get install -y unzip
+
+      # download sonar scanner cli
+      wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip
+      unzip sonar-scanner-cli-4.2.0.1873-linux.zip
+
+      # configure sonar scanner cli
+      mkdir -p /opt/sonar-scanner
+      mv sonar-scanner-4.2.0.1873-linux/* /opt/sonar-scanner
+      sed 's/#sonar.host.url/sonar.host.url/' /opt/sonar-scanner/conf/sonar-scanner.properties
+      sed 's/#sonar.sourceEncoding/sonar.sourceEncoding/' /opt/sonar-scanner/conf/sonar-scanner.properties
+      
+      cat << END > /etc/profile.d/sonar-scanner.sh
+#/bin/bash
+export PATH="$PATH:/opt/sonar-scanner/bin"
+END
+
+      chmod u+x /etc/profile.d/sonar-scanner.sh
+  SCRIPT
+
+  config.vm.provision "shell", inline: $install_sonarscanner
+
   # forward more ports to guest VM here
-  config.vm.network "forwarded_port", guest: 9000, host: 9000, host_ip: "127.0.0.1"
-  config.vm.network "forwarded_port", guest: 9092, host: 9092, host_ip: "127.0.0.1"
+  config.vm.network "forwarded_port", guest: 9000, host: 9000
+  config.vm.network "forwarded_port", guest: 9092, host: 9092
 end
