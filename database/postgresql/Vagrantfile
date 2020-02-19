@@ -1,0 +1,53 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.define "postgresql" # vagrant cli
+  config.vm.box = "bento/ubuntu-16.04"
+  
+  config.vm.provider "virtualbox" do |vb|
+    vb.name = "postgresql" # virtualbox GUI
+  end
+  
+  config.vm.hostname = "postgresql"
+
+  # provision Docker
+  # install containers
+  #   postgresql db
+  #   postgresql admin console
+  config.vm.provision "docker" do |d|
+
+    d.pull_images "postgres:latest"
+    d.run "postgres",
+      image: "postgres:latest",
+      args: "--network bridge -e POSTGRES_PASSWORD=password -p 5432:5432"
+    
+      d.pull_images "dpage/pgadmin4"
+      d.run "pgadmin4",
+        image: "dpage/pgadmin4",
+        args: "--network bridge -p 4000:80 " +
+              "-e PGADMIN_DEFAULT_EMAIL=admin@admin.co " +
+              "-e PGADMIN_DEFAULT_PASSWORD=password"
+      
+  end
+
+  # download postgresql sample db
+  #   source: https://www.postgresqltutorial.com/postgresql-sample-database/
+  $configure_postgresql_sample_db =<<-SCRIPT
+      apt-get install -y unzip
+
+      # download sample db & unzip
+      wget -O postgresql_dvd_rental_db.zip https://sp.postgresqltutorial.com/wp-content/uploads/2019/05/dvdrental.zip
+      unzip postgresql_dvd_rental_db.zip
+      
+      # move sample db into container & cleanup
+      docker cp dvdrental.tar postgres:/
+      rm postgresql_dvd_rental_db.zip dvdrental.tar
+  SCRIPT
+
+  config.vm.provision "shell", inline: $configure_postgresql_sample_db
+
+  # forward more ports to guest VM here
+  config.vm.network "forwarded_port", guest: 8000, host: 8000
+  config.vm.network "forwarded_port", guest: 4000, host: 4000
+end
