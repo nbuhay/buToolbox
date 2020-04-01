@@ -1,10 +1,17 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+# Monkey Patch - https://github.com/hashicorp/vagrant/issues/8878
+class VagrantPlugins::ProviderVirtualBox::Action::Network
+  def dhcp_server_matches_config?(dhcp_server, config)
+    true
+  end
+end
+
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/trusty64"
   config.vm.provision "shell", path: "../../linux/ubuntu/install/golang.sh"
   config.vm.network "private_network", type: "dhcp"
-  config.vm.network "forwarded_port", guest: 5000, host: 5000, host_ip: "127.0.0.1"
+  config.vm.network "forwarded_port", guest: 5000, host: 5000
   config.vm.synced_folder ".", "/home/vagrant/golang"
 end
