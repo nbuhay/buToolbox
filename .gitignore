@@ -25,3 +25,6 @@ ansible/minikubeLab/*.key
 *.terraform
 *.tfstate
 *.tfstate.backup
+
+### Visual Studio Code ###
+*.code-workspace
