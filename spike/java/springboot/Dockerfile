@@ -1,5 +1,5 @@
 FROM centos:centos7
-LABEL maintainer="nbuhay@gmail.com"
+LABEL maintainer="Nic Buhay"
 EXPOSE 8080
 RUN yum update -y && \
     yum install -y \
