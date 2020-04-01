@@ -28,3 +28,6 @@ ansible/minikubeLab/*.key
 
 ### Visual Studio Code ###
 *.code-workspace
+
+### Windows ###
+*.exe
