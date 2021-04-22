@@ -1,0 +1,28 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-20.04"
+  config.vm.define "aws-cli-sandbox" # vagrant cli
+
+  config.vm.provider "virtualbox" do |vb|
+    # vb.name = "aws-sandbox" # show this name in virtualbox GUI
+    vb.memory = 2048
+    vb.cpus = 2
+  end
+
+  config.vm.provision "shell", inline: <<-SHELL
+    # https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-linux.html
+    sudo apt-get install -y unzip
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    unzip awscliv2.zip
+    sudo ./aws/install
+
+    # Cleanup bits
+    rm -rf aws/ && rm awscliv2.zip
+
+    # Remind about docs
+    echo 'Configure awscli for usage: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html' 
+  SHELL
+
+end
